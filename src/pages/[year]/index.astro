@@ -1,11 +1,14 @@
 ---
 /**
- * A year: /1964. A calendar of every digitized month that year.
+ * A year: /1964. A calendar of every month that year with an issue here or at the UC Berkeley
+ * Library. Years with only the library's issues are kept out of search results (see
+ * astro.config.mjs), since their calendars only link elsewhere.
  */
 import type { GetStaticPaths } from "astro";
 import Calendar from "../../components/Calendar.astro";
+import CalendarKey from "../../components/CalendarKey.astro";
 import Layout from "../../layouts/Layout.astro";
-import { issuesByMonth, type Issue } from "../../lib/issues.mjs";
+import { countSummary, issuesByMonth, type Issue } from "../../lib/issues.mjs";
 
 export const getStaticPaths = (() => {
   const years = [...issuesByMonth()];
@@ -23,12 +26,19 @@ interface Props {
 }
 
 const { year, months, previous, next } = Astro.props;
-const count = [...months.values()].reduce((sum, issues) => sum + issues.length, 0);
+const all = [...months.values()].flat();
+const scanned = all.filter((issue) => issue.id).length;
+const plural = (n: number) => (n === 1 ? "issue" : "issues");
 ---
 
 <Layout
   title={`Issues from ${year}`}
-  description={`${count} digitized issues of the Daily Californian from ${year}, UC Berkeley's student newspaper, with the full text of every page.`}
+  description={
+    scanned
+      ? `${scanned} digitized ${plural(scanned)} of the Daily Californian from ${year}, UC Berkeley's student newspaper, with the full text of every page.`
+      : `Issues of the Daily Californian from ${year}, UC Berkeley's student newspaper, in the UC Berkeley Library's digital collections.`
+  }
+  noindex={!scanned}
   breadcrumbs={[
     ["Archive", "/"],
     [String(year), `/${year}`],
@@ -47,9 +57,9 @@ const count = [...months.values()].reduce((sum, issues) => sum + issues.length, 
     {next && <a href={`/${next}`}>{next} &raquo;</a>}
   </p>
   <p>
-    {count}
-    {count === 1 ? "issue" : "issues"} from {year} have been digitized. Pick a day to read it.
+    Issues from {year}: {countSummary(all)}. Pick a day to read it.
   </p>
+  <CalendarKey />
   <br />
   <div class="row">
     {[...months].map(([month, issues]) => (

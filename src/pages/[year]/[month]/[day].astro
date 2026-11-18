@@ -60,7 +60,7 @@ const description = `The Daily Californian's print edition from ${issue.label}, 
     [String(issue.day), issue.path],
   ]}
 >
-  <article>
+  <article data-issue-view={issue.iso}>
     <ol class="breadcrumb">
       <li>
         <a href="/#issues">Issues</a>
@@ -101,6 +101,18 @@ const description = `The Daily Californian's print edition from ${issue.label}, 
       <div class="alert alert-warning alert-note" role="note">
         <p>
           <strong>Note:</strong> {issue.note}.
+        </p>
+      </div>
+    )}
+
+    {issue.libraryURL && (
+      <div class="alert alert-info alert-note" role="note">
+        <p>
+          This issue is also in the UC Berkeley Library's digital collections:{" "}
+          <a href={issue.libraryURL} rel="noopener" data-issue-date={issue.iso}>
+            see the library's copy
+          </a>
+          .
         </p>
       </div>
     )}

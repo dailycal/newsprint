@@ -1,12 +1,21 @@
 ---
 /**
  * A month: /1964/november. Like the old site's month page: breadcrumbs, the previous and next
- * digitized months, and a calendar of the month's issues.
+ * months with issues, and a calendar of the month's issues, here and at the UC Berkeley Library.
+ * Months with only the library's issues are kept out of search results (see astro.config.mjs),
+ * since their calendars only link elsewhere.
  */
 import type { GetStaticPaths } from "astro";
 import Calendar from "../../../components/Calendar.astro";
+import CalendarKey from "../../../components/CalendarKey.astro";
 import Layout from "../../../layouts/Layout.astro";
-import { issuesByMonth, MONTHS, monthSlug, type Issue } from "../../../lib/issues.mjs";
+import {
+  countSummary,
+  issuesByMonth,
+  MONTHS,
+  monthSlug,
+  type Issue,
+} from "../../../lib/issues.mjs";
 
 export const getStaticPaths = (() => {
   const all = [...issuesByMonth()].flatMap(([year, months]) =>
@@ -33,11 +42,17 @@ const name = MONTHS[month - 1];
 const href = (ref: MonthRef) => `/${ref.year}/${monthSlug(ref.month)}`;
 const label = (ref: MonthRef) => `${MONTHS[ref.month - 1]} ${ref.year}`;
 const noted = issues.filter((issue) => issue.note);
+const scanned = issues.filter((issue) => issue.id).length;
 ---
 
 <Layout
   title={`Issues from ${name} ${year}`}
-  description={`${issues.length} digitized ${issues.length === 1 ? "issue" : "issues"} of the Daily Californian from ${name} ${year}, with the full text of every page.`}
+  description={
+    scanned
+      ? `${scanned} digitized ${scanned === 1 ? "issue" : "issues"} of the Daily Californian from ${name} ${year}, with the full text of every page.`
+      : `Issues of the Daily Californian from ${name} ${year} in the UC Berkeley Library's digital collections.`
+  }
+  noindex={!scanned}
   breadcrumbs={[
     ["Archive", "/"],
     [String(year), `/${year}`],
@@ -63,13 +78,9 @@ const noted = issues.filter((issue) => issue.note);
         {previous && next && " · "}
         {next && <a href={href(next)}>{label(next)} &raquo;</a>}
       </p>
-      <br />
+      <p>{countSummary(issues)}.</p>
       <Calendar year={year} month={month} issues={issues} />
-      {noted.length > 0 && (
-        <p class="small">
-          Days underlined in orange have a note about the scan, such as missing pages.
-        </p>
-      )}
+      <CalendarKey notes={noted.length > 0} />
     </div>
   </div>
 </Layout>

@@ -1,7 +1,8 @@
 ---
 /**
- * One month as a calendar, like the old site's inline date picker: days with an issue link to it,
- * the rest are greyed out. Built at build time, so it works without JavaScript and every issue is a
+ * One month as a calendar, like the old site's inline date picker: days we have a scan of link to
+ * the issue's page, days only the UC Berkeley Library has link to its record there (in a lighter
+ * color; see CalendarKey.astro), and the rest are greyed out. Built at build time, so it works without JavaScript and every issue is a
  * plain link search engines can follow.
  */
 import { MONTHS, monthSlug, type Issue } from "../lib/issues.mjs";
@@ -51,9 +52,21 @@ const name = `${MONTHS[month - 1]} ${year}`;
         <tr>
           {week.map((day) => {
             const issue = day ? byDay.get(day) : undefined;
-            return issue ? (
+            return issue?.id ? (
               <td class:list={["issue", { note: issue.note }]}>
                 <a href={issue.path} aria-label={issue.label} title={issue.note || undefined}>
+                  {day}
+                </a>
+              </td>
+            ) : issue ? (
+              <td class="library">
+                <a
+                  href={issue.libraryURL}
+                  data-issue-date={issue.iso}
+                  aria-label={`${issue.label}, at the UC Berkeley Library`}
+                  title="At the UC Berkeley Library"
+                  rel="noopener"
+                >
                   {day}
                 </a>
               </td>

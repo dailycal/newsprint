@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "pack-ocr": "node scripts/pack-ocr.mjs",
+    "scrape-library": "node scripts/scrape-library.mjs",
     "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.{js,mjs,ts,astro}\" \"scripts/**/*.mjs\" \"*.config.{js,mjs}\" && prettier --check --no-error-on-unmatched-pattern \"src/**/*.{js,mjs,ts,astro,css}\" \"scripts/**/*.mjs\" \"*.config.{js,mjs}\"",
     "lint:fix": "eslint --no-error-on-unmatched-pattern \"src/**/*.{js,mjs,ts,astro}\" \"scripts/**/*.mjs\" \"*.config.{js,mjs}\" --fix && prettier --write --no-error-on-unmatched-pattern \"src/**/*.{js,mjs,ts,astro,css}\" \"scripts/**/*.mjs\" \"*.config.{js,mjs}\"",
     "deploy": "npm run build && wrangler deploy"

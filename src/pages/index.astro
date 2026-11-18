@@ -1,20 +1,31 @@
 ---
 /**
  * The homepage: the old archive's "Newsprint" banner (with search and a random issue), then the old
- * /issues/ page's grid of every month since 1871, with digitized months linking to their calendar.
- * All built from data/issues.csv.
+ * /issues/ page's grid of every month since 1871: a single index of every issue, here or at the UC
+ * Berkeley Library, with each month linking to its calendar. All built from data/issues.csv.
  */
 import { getImage } from "astro:assets";
 import hero from "../assets/hero.jpg";
+import CalendarKey from "../components/CalendarKey.astro";
 import Layout from "../layouts/Layout.astro";
 import { site } from "../config/site";
-import { getIssues, issuesByMonth, MONTHS, monthSlug } from "../lib/issues.mjs";
+import {
+  countSummary,
+  getAllIssues,
+  getIssues,
+  issuesByMonth,
+  MONTHS,
+  monthSlug,
+} from "../lib/issues.mjs";
 
 const issues = getIssues();
 const byMonth = issuesByMonth();
-const lastYear = Math.max(new Date().getFullYear(), issues.at(-1)!.year);
+const lastYear = Math.max(new Date().getFullYear(), getAllIssues().at(-1)!.year);
 const years = Array.from({ length: lastYear - site.firstYear + 1 }, (_, i) => site.firstYear + i);
-const monthCount = [...byMonth.values()].reduce((sum, months) => sum + months.size, 0);
+// Issue counts for the index: in all, ours, and the library's (some issues are in both)
+const all = getAllIssues();
+const count = (n: number) => n.toLocaleString("en-US");
+const atLibrary = all.filter((issue) => issue.library).length;
 
 const background = await getImage({ src: hero, width: 1400, format: "webp", quality: 70 });
 const paths = issues.map((issue) => issue.path);
@@ -103,14 +114,12 @@ const paths = issues.map((issue) => issue.path);
     <div class="col-md-10">
       <h2>All issues</h2>
       <p>
-        The Daily Californian has been continually published since {site.firstYear}. Months that are
-        <span style="padding: 2px 6px" class="available">
-          highlighted
-        </span>{" "}
-        have been digitized: {monthCount} months, {issues.length.toLocaleString("en-US")} issues.
-        Pick one to see its calendar.
+        The Daily Californian has been published continually since {site.firstYear}. This is an
+        index of every issue that has been digitized, by us or by the UC Berkeley Library:{" "}
+        {count(all.length)} in all, {count(issues.length)} by us and {count(atLibrary)} by the
+        library. Pick a month to see its calendar.
       </p>
-      <br />
+      <CalendarKey />
       <table class="table issue-grid">
         <caption class="sr-only">Digitized months, by year</caption>
         <tbody>
@@ -122,12 +131,17 @@ const paths = issues.map((issue) => issue.path);
                   {months ? <a href={`/${year}`}>{year}</a> : year}
                 </td>
                 {MONTHS.map((name, i) => {
-                  const count = months?.get(i + 1)?.length;
-                  return count ? (
-                    <td class="month-cell available">
+                  const monthIssues = months?.get(i + 1);
+                  return monthIssues ? (
+                    <td
+                      class:list={[
+                        "month-cell",
+                        monthIssues.some((issue) => issue.id) ? "available" : "library",
+                      ]}
+                    >
                       <a
                         href={`/${year}/${monthSlug(i + 1)}`}
-                        title={`${name} ${year}: ${count} ${count === 1 ? "issue" : "issues"}`}
+                        title={`${name} ${year}: ${countSummary(monthIssues)}`}
                       >
                         {name.slice(0, 3).toUpperCase()}
                       </a>

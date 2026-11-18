@@ -193,6 +193,22 @@ span.available {
   padding: 2px;
 }
 
+/* Months and days only the UC Berkeley Library has: a lighter blue than ours */
+.table > tbody > tr > td.month-cell.library {
+  font-weight: 600;
+  background-color: #cfe5f6;
+}
+.table > tbody > tr > td.month-cell.library a {
+  color: #0b5c94;
+  display: block;
+}
+.table > tbody > tr > td.month-cell.library a:hover,
+.table > tbody > tr > td.month-cell.library a:focus {
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+}
+
 /* ---- Additions ---- */
 
 /* Search box: the hero's, and the /search page's */
@@ -326,6 +342,46 @@ span.available {
 .calendar td.note a {
   box-shadow: inset 0 -3px 0 #e2a03f;
 }
+.calendar td.library a {
+  background-color: #cfe5f6;
+  color: #0b5c94;
+}
+.calendar td.library a:hover,
+.calendar td.library a:focus {
+  background-color: #000;
+  color: #fff;
+}
+
+/* What the calendars' colors mean */
+.calendar-key {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  font-size: 15px;
+  font-weight: 300;
+}
+.calendar-key li {
+  display: inline-block;
+  margin-right: 24px;
+}
+.calendar-key .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border-radius: 3px;
+}
+.calendar-key .swatch.issue {
+  background-color: #107dc7;
+}
+.calendar-key .swatch.library {
+  background-color: #cfe5f6;
+}
+.calendar-key .swatch.note {
+  background-color: #107dc7;
+  box-shadow: inset 0 -3px 0 #e2a03f;
+}
 
 /* An issue's page */
 .issue-header {
@@ -417,6 +473,10 @@ span.available {
 }
 
 /* Search results */
+.search .library-search {
+  margin: 12px 0 0;
+  font-size: 16px;
+}
 .search .status {
   margin-top: 20px;
   font-size: 16px;

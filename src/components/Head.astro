@@ -73,6 +73,7 @@ const structuredData: object[] = [
           contentUrl: driveViewURL(issue),
         },
         isAccessibleForFree: true,
+        ...(issue.libraryURL ? { sameAs: issue.libraryURL } : {}),
       }
     : {
         "@context": "https://schema.org",

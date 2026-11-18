@@ -1,0 +1,31 @@
+---
+/**
+ * What the calendars' and the homepage grid's colors mean: issues scanned here, and issues only the
+ * UC Berkeley Library has (which link to its copy).
+ */
+import { site } from "../config/site";
+
+export interface Props {
+  /** Also explain the orange underline on issues with a note about the scan (month pages). */
+  notes?: boolean;
+}
+
+const { notes = false } = Astro.props;
+---
+
+<ul class="calendar-key">
+  <li>
+    <span class="swatch issue"></span>Scanned by The Daily Californian
+  </li>
+  <li>
+    <span class="swatch library"></span>Only at the{" "}
+    <a href={site.libraryUrl} rel="noopener">
+      UC Berkeley Library
+    </a>
+  </li>
+  {notes && (
+    <li>
+      <span class="swatch note" />A note about the scan, such as missing pages
+    </li>
+  )}
+</ul>

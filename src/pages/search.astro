@@ -2,12 +2,14 @@
 /**
  * Search: /search?q=<query>. Searches the full text of every issue in the browser, with the index
  * src/lib/search-index.mjs builds into dist/pagefind/ (in `npm run dev`, from the last build), and
- * can narrow results to a decade and sort them by date.
+ * can narrow results to a decade and sort them by date. Searching for a date also lists the issues
+ * only the UC Berkeley Library has, linking to its copy.
  */
 import Layout from "../layouts/Layout.astro";
-import { getIssues } from "../lib/issues.mjs";
+import { site } from "../config/site";
+import { getAllIssues } from "../lib/issues.mjs";
 
-const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 10) * 10))];
+const decades = [...new Set(getAllIssues().map((issue) => Math.floor(issue.year / 10) * 10))];
 ---
 
 <Layout
@@ -59,6 +61,11 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     <noscript>
       <p class="status">Search needs JavaScript.</p>
     </noscript>
+    <p class="library-search">
+      <a href={site.libraryUrl} rel="noopener">
+        Search the UC Berkeley Library's copies &raquo;
+      </a>
+    </p>
     <p class="status" aria-live="polite"></p>
     <ol class="results"></ol>
     <button type="button" class="btn btn-default more" hidden>
@@ -66,12 +73,19 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     </button>
     <p class="small">
       The text is transcribed automatically from the scans, so it has errors, especially in older
-      issues. Try other spellings, or fewer words.
+      issues. Try other spellings, or fewer words. Issues only the UC Berkeley Library has are found
+      by their date, like “March 2, 1910”; to search their text, use the
+      <a href={site.libraryUrl} rel="noopener">
+        library's search
+      </a>
+      .
     </p>
   </div>
 </Layout>
 
 <script>
+  import { librarySearchUrl } from "../config/site";
+
   // The parts of Pagefind's browser API this page uses
   interface ResultData {
     url: string;
@@ -101,6 +115,7 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
   const status = document.querySelector<HTMLElement>(".search > .status")!;
   const list = document.querySelector<HTMLOListElement>(".search .results")!;
   const more = document.querySelector<HTMLButtonElement>(".search .more")!;
+  const librarySearch = document.querySelector<HTMLAnchorElement>(".search .library-search a")!;
 
   // Built by src/lib/search-index.mjs, not part of the bundle: a variable, so the browser loads it at
   // runtime instead of Vite trying to resolve it (which fails in `npm run dev`)
@@ -114,7 +129,117 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     return pagefind;
   }
 
+  // ---- Searching for a date ----
+  // A search for a day lists that day's issue first, ours or the UC Berkeley Library's (most of the
+  // library's aren't in the search index); a search for a month links to its calendar. From
+  // /search-dates.json (src/pages/search-dates.json.ts), loaded the first time it's needed.
+  interface SearchDates {
+    ours: string[];
+    library: Record<string, number>;
+    months: string[];
+  }
+  let searchDates: Promise<SearchDates> | undefined;
+  const loadSearchDates = () =>
+    (searchDates ??= fetch("/search-dates.json").then((response) => response.json()));
+
+  const MONTHS = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+  const WEEKDAYS = /^(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(day|nesday|sday|urday)?$/;
+
+  /**
+   * The date a search is for, if it's only a date: "March 2, 1910", "Wednesday, March 2, 1910",
+   * "2 Mar 1910", "1910-03-02" and "3/2/1910" are days; "March 1910" and "1910-03" are months.
+   */
+  function parseDate(query: string): { year: number; month: number; day?: number } | undefined {
+    const q = query.trim().toLowerCase();
+    let year: number, month: number, day: number | undefined;
+    let m = q.match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/);
+    if (m) [year, month, day] = [Number(m[1]), Number(m[2]), m[3] ? Number(m[3]) : undefined];
+    else if ((m = q.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) {
+      [month, day, year] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    } else {
+      const words = q
+        .replace(/[,.]/g, " ")
+        .split(/\s+/)
+        .filter((word) => word && !WEEKDAYS.test(word));
+      const monthAt = words.findIndex(
+        (word) => word.length >= 3 && MONTHS.some((name) => name.startsWith(word)),
+      );
+      if (monthAt === -1) return undefined;
+      month = MONTHS.findIndex((name) => name.startsWith(words[monthAt]!)) + 1;
+      const rest = words.filter((_, i) => i !== monthAt);
+      const numbers = rest.map(Number);
+      if (numbers.some((n) => !Number.isInteger(n))) return undefined;
+      const years = numbers.filter((n) => n > 999);
+      const days = numbers.filter((n) => n <= 31);
+      if (years.length !== 1 || days.length > 1 || numbers.length !== years.length + days.length)
+        return undefined;
+      [year, day] = [years[0]!, days[0]];
+    }
+    const date = new Date(Date.UTC(year, month - 1, day ?? 1));
+    if (date.getUTCMonth() !== month - 1 || date.getUTCFullYear() !== year) return undefined;
+    return { year, month, day };
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dayLabel = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  /** The results a date search starts with: the day's issue, or the month's calendar. */
+  async function dateResults(query: string): Promise<ResultData[]> {
+    const date = parseDate(query);
+    if (!date) return [];
+    if (decade.value && `${Math.floor(date.year / 10) * 10}s` !== decade.value) return [];
+    const { ours, library, months } = await loadSearchDates();
+    const month = `${date.year}-${pad(date.month)}`;
+    const monthPath = `/${date.year}/${MONTHS[date.month - 1]}`;
+    const blank = { content: "", locations: [] };
+    if (date.day) {
+      const iso = `${month}-${pad(date.day)}`;
+      const title = dayLabel.format(new Date(`${iso}T00:00:00Z`));
+      if (ours.includes(iso)) {
+        return [{ ...blank, url: `${monthPath}/${date.day}`, meta: { title } }];
+      }
+      if (library[iso]) {
+        const link = `https://digicoll.lib.berkeley.edu/record/${library[iso]}`;
+        return [{ ...blank, url: link, meta: { title, link, date: iso } }];
+      }
+      return [];
+    }
+    if (!months.includes(month)) return [];
+    const name = `${MONTHS[date.month - 1]![0]!.toUpperCase()}${MONTHS[date.month - 1]!.slice(1)}`;
+    return [
+      {
+        ...blank,
+        url: monthPath,
+        meta: {
+          title: `${name} ${date.year}`,
+          info: "Every issue from this month, here and at the UC Berkeley Library",
+        },
+      },
+    ];
+  }
+
   let results: { data(): Promise<ResultData> }[] = [];
+  // URLs of results already listed, so a date result isn't listed again from the search index
+  let listed = new Set<string>();
   let shown = 0;
   // Each search gets a number, so a slow one that finishes after a newer one is dropped
   let latest = 0;
@@ -158,20 +283,33 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     return nodes;
   }
 
-  /** One result: the issue's date, its sponsor or note, and the matching passage. */
+  /**
+   * One result: the issue's date, its sponsor or note, and the matching passage. An issue only the
+   * library has (meta.link) links to its copy there, and has no passage.
+   */
   function render(data: ResultData): HTMLLIElement {
     const { meta } = data;
     const item = document.createElement("li");
     const link = document.createElement("a");
     link.className = "result";
-    link.href = data.url;
+    link.href = meta.link ?? data.url;
+    if (meta.link) {
+      link.rel = "noopener";
+      // Counted as a view of the issue at the library (see Layout.astro)
+      if (meta.date) link.dataset.issueDate = meta.date;
+    }
     const title = document.createElement("span");
     title.className = "title";
     title.textContent = meta.title ?? data.url;
     link.append(title);
     item.append(link);
 
-    const details = [meta.sponsor && `Sponsored by ${meta.sponsor}`, meta.note].filter(Boolean);
+    const details = [
+      meta.info,
+      meta.link && "At the UC Berkeley Library",
+      meta.sponsor && `Sponsored by ${meta.sponsor}`,
+      meta.note,
+    ].filter(Boolean);
     if (details.length) {
       const info = document.createElement("span");
       info.className = "meta";
@@ -190,7 +328,8 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
       results.slice(shown, shown + PAGE_SIZE).map((result) => result.data()),
     );
     if (search !== latest) return;
-    list.append(...page.map(render));
+    const fresh = page.filter((data) => !listed.has(data.url) && listed.add(data.url));
+    list.append(...fresh.map(render));
     shown += page.length;
     more.hidden = shown >= results.length;
   }
@@ -203,6 +342,11 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     if (decade.value) params.set("decade", decade.value);
     if (sort.value) params.set("sort", sort.value);
     history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
+    // The same search, through the text of the library's copies
+    librarySearch.href = librarySearchUrl(query.trim());
+    librarySearch.textContent = query.trim()
+      ? `Search the UC Berkeley Library's copies for “${query.trim()}” »`
+      : "Search the UC Berkeley Library's copies »";
 
     if (!query.trim()) {
       results = [];
@@ -233,10 +377,21 @@ const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 1
     // null: a newer search replaced this one while it waited
     if (!found || search !== latest) return;
 
-    results = found.results;
+    // A date search's own results go first (see dateResults)
+    let dated: ResultData[] = [];
+    try {
+      dated = await dateResults(query);
+    } catch {
+      // Without /search-dates.json, the search index's results still stand
+    }
+    if (search !== latest) return;
+    // An issue already in the search index (ours) isn't counted twice
+    const extra = dated.filter((data) => data.meta.link).length;
+    results = [...dated.map((data) => ({ data: async () => data })), ...found.results];
     shown = 0;
+    listed = new Set();
     list.replaceChildren();
-    const count = results.length;
+    const count = found.results.length + extra;
     const where = decade.value ? ` in the ${decade.value}` : "";
     status.textContent = count
       ? `${count.toLocaleString("en-US")} ${count === 1 ? "issue matches" : "issues match"} “${query.trim()}”${where}`

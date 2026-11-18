@@ -108,6 +108,26 @@ const analytics = `if (location.hostname === ${JSON.stringify(new URL(Astro.site
         toggle.classList.toggle("collapsed", !open);
         toggle.setAttribute("aria-expanded", String(open));
       });
+
+      // Analytics: an `issue_view` event (for Google Tag Manager) each time someone views an issue,
+      // with its date (issue_date, "YYYY-MM-DD") and where (issue_host): "dailycal" when an issue's
+      // page here loads (it has data-issue-view), "library" when a link to the UC Berkeley
+      // Library's copy is followed (links with data-issue-date). Only sent to Google on the live
+      // site, where Tag Manager loads.
+      const trackIssue = (date: string, host: "dailycal" | "library") => {
+        const w = window as unknown as { dataLayer?: object[] };
+        (w.dataLayer ??= []).push({ event: "issue_view", issue_date: date, issue_host: host });
+      };
+      const viewed = document.querySelector<HTMLElement>("[data-issue-view]")?.dataset.issueView;
+      if (viewed) trackIssue(viewed, "dailycal");
+      const onLink = (event: MouseEvent) => {
+        // Left clicks, and middle clicks (to open in a new tab)
+        if (event.type === "auxclick" && event.button !== 1) return;
+        const link = (event.target as Element).closest<HTMLAnchorElement>("a[data-issue-date]");
+        if (link) trackIssue(link.dataset.issueDate!, "library");
+      };
+      document.addEventListener("click", onLink);
+      document.addEventListener("auxclick", onLink);
     </script>
   </body>
 </html>

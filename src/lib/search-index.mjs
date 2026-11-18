@@ -7,6 +7,10 @@
  * then the full text of every page. The /search page leaves the date and sponsor out of the
  * passage it shows with each result, since it shows them above the passage already.
  *
+ * Issues only the UC Berkeley Library has aren't in this index: Pagefind writes a file per record,
+ * and their ~19,000 would put the site over Cloudflare's file limit. The /search page finds them
+ * by date instead, from /search-dates.json (src/pages/search-dates.json.ts).
+ *
  * In `npm run dev`, /pagefind/ is served from the last build's dist/pagefind/ (if there is one), so
  * search works in the dev server too once the site has been built.
  */
