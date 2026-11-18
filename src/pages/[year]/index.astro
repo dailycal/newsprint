@@ -1,0 +1,61 @@
+---
+/**
+ * A year: /1964. A calendar of every digitized month that year.
+ */
+import type { GetStaticPaths } from "astro";
+import Calendar from "../../components/Calendar.astro";
+import Layout from "../../layouts/Layout.astro";
+import { issuesByMonth, type Issue } from "../../lib/issues.mjs";
+
+export const getStaticPaths = (() => {
+  const years = [...issuesByMonth()];
+  return years.map(([year, months], i) => ({
+    params: { year: String(year) },
+    props: { year, months, previous: years[i - 1]?.[0], next: years[i + 1]?.[0] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  year: number;
+  months: Map<number, Issue[]>;
+  previous?: number;
+  next?: number;
+}
+
+const { year, months, previous, next } = Astro.props;
+const count = [...months.values()].reduce((sum, issues) => sum + issues.length, 0);
+---
+
+<Layout
+  title={`Issues from ${year}`}
+  description={`${count} digitized issues of the Daily Californian from ${year}, UC Berkeley's student newspaper, with the full text of every page.`}
+  breadcrumbs={[
+    ["Archive", "/"],
+    [String(year), `/${year}`],
+  ]}
+>
+  <ol class="breadcrumb">
+    <li>
+      <a href="/#issues">Issues</a>
+    </li>
+    <li class="active">{year}</li>
+  </ol>
+  <h1>Issues published in {year}</h1>
+  <p>
+    {previous && <a href={`/${previous}`}>&laquo; {previous}</a>}
+    {previous && next && " · "}
+    {next && <a href={`/${next}`}>{next} &raquo;</a>}
+  </p>
+  <p>
+    {count}
+    {count === 1 ? "issue" : "issues"} from {year} have been digitized. Pick a day to read it.
+  </p>
+  <br />
+  <div class="row">
+    {[...months].map(([month, issues]) => (
+      <div class="col-sm-6 col-md-4">
+        <Calendar year={year} month={month} issues={issues} linkTitle />
+      </div>
+    ))}
+  </div>
+</Layout>

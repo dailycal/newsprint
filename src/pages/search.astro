@@ -1,0 +1,268 @@
+---
+/**
+ * Search: /search?q=<query>. Searches the full text of every issue in the browser, with the index
+ * src/lib/search-index.mjs builds into dist/pagefind/ (in `npm run dev`, from the last build), and
+ * can narrow results to a decade and sort them by date.
+ */
+import Layout from "../layouts/Layout.astro";
+import { getIssues } from "../lib/issues.mjs";
+
+const decades = [...new Set(getIssues().map((issue) => Math.floor(issue.year / 10) * 10))];
+---
+
+<Layout
+  title="Search"
+  description="Search the full text of every issue of the Daily Californian in the archive."
+  noindex
+>
+  <div class="search">
+    <ol class="breadcrumb">
+      <li>
+        <a href="/">Archive</a>
+      </li>
+      <li class="active">Search</li>
+    </ol>
+    <h1>Search the archive</h1>
+    <form class="search-form" action="/search" role="search" style="margin-left: 0">
+      <input
+        type="search"
+        name="q"
+        aria-label="Search every issue"
+        placeholder="Search every issue"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="submit" class="btn btn-dc">
+        Search
+      </button>
+    </form>
+    <div class="search-filters">
+      <label>
+        Decade
+        <select name="decade">
+          <option value="">Any</option>
+          {decades.map((decade) => (
+            <option value={`${decade}s`}>{decade}s</option>
+          ))}
+        </select>
+      </label>
+      &nbsp;&nbsp;
+      <label>
+        Sort by
+        <select name="sort">
+          <option value="">Relevance</option>
+          <option value="asc">Oldest first</option>
+          <option value="desc">Newest first</option>
+        </select>
+      </label>
+    </div>
+    <noscript>
+      <p class="status">Search needs JavaScript.</p>
+    </noscript>
+    <p class="status" aria-live="polite"></p>
+    <ol class="results"></ol>
+    <button type="button" class="btn btn-default more" hidden>
+      More results
+    </button>
+    <p class="small">
+      The text is transcribed automatically from the scans, so it has errors, especially in older
+      issues. Try other spellings, or fewer words.
+    </p>
+  </div>
+</Layout>
+
+<script>
+  // The parts of Pagefind's browser API this page uses
+  interface ResultData {
+    url: string;
+    /** The record's text: its date and sponsor, then the issue's text, as words separated by spaces */
+    content: string;
+    meta: Record<string, string>;
+    /** Positions (in content's words) of the words that matched */
+    locations: number[];
+  }
+  interface Pagefind {
+    options(options: object): Promise<void>;
+    init(): Promise<void>;
+    debouncedSearch(
+      query: string,
+      options?: object,
+      ms?: number,
+    ): Promise<{ results: { data(): Promise<ResultData> }[] } | null>;
+  }
+
+  const PAGE_SIZE = 10;
+  const EXCERPT_WORDS = 40;
+
+  const form = document.querySelector<HTMLFormElement>(".search form")!;
+  const input = form.querySelector<HTMLInputElement>("input")!;
+  const decade = document.querySelector<HTMLSelectElement>(".search select[name=decade]")!;
+  const sort = document.querySelector<HTMLSelectElement>(".search select[name=sort]")!;
+  const status = document.querySelector<HTMLElement>(".search > .status")!;
+  const list = document.querySelector<HTMLOListElement>(".search .results")!;
+  const more = document.querySelector<HTMLButtonElement>(".search .more")!;
+
+  // Built by src/lib/search-index.mjs, not part of the bundle: a variable, so the browser loads it at
+  // runtime instead of Vite trying to resolve it (which fails in `npm run dev`)
+  const PAGEFIND = "/pagefind/pagefind.js";
+  let pagefind: Promise<Pagefind> | undefined;
+  function loadPagefind(): Promise<Pagefind> {
+    pagefind ??= import(/* @vite-ignore */ PAGEFIND).then(async (module: Pagefind) => {
+      await module.init();
+      return module;
+    });
+    return pagefind;
+  }
+
+  let results: { data(): Promise<ResultData> }[] = [];
+  let shown = 0;
+  // Each search gets a number, so a slow one that finishes after a newer one is dropped
+  let latest = 0;
+
+  /**
+   * The passage shown with a result: EXCERPT_WORDS words of the issue's text around the most
+   * matches, with the matching words in <mark>. Each record's text starts with the issue's date
+   * and sponsor (meta.skip words), so a search for "November 1964" finds it, but they're already
+   * shown above the passage, so it's taken from after them.
+   */
+  function excerpt({ content, meta, locations }: ResultData): Node[] {
+    const words = content.split(" ");
+    const start = Number(meta.skip) || 0;
+    const matches = new Set(locations.filter((at) => at >= start));
+    let from = start;
+    let best = 0;
+    for (const at of matches) {
+      const windowStart = Math.max(start, Math.min(at - 5, words.length - EXCERPT_WORDS));
+      let count = 0;
+      for (const other of matches) {
+        if (other >= windowStart && other < windowStart + EXCERPT_WORDS) count++;
+      }
+      if (count > best) [from, best] = [windowStart, count];
+    }
+
+    const nodes: Node[] = [document.createTextNode(from > start ? "… " : "")];
+    let text = "";
+    const end = Math.min(words.length, from + EXCERPT_WORDS);
+    for (let at = from; at < end; at++) {
+      if (matches.has(at)) {
+        nodes.push(document.createTextNode(text));
+        text = "";
+        const mark = document.createElement("mark");
+        mark.textContent = words[at]!;
+        nodes.push(mark, document.createTextNode(" "));
+      } else {
+        text += `${words[at]} `;
+      }
+    }
+    nodes.push(document.createTextNode(text.trimEnd() + (end < words.length ? " …" : "")));
+    return nodes;
+  }
+
+  /** One result: the issue's date, its sponsor or note, and the matching passage. */
+  function render(data: ResultData): HTMLLIElement {
+    const { meta } = data;
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.className = "result";
+    link.href = data.url;
+    const title = document.createElement("span");
+    title.className = "title";
+    title.textContent = meta.title ?? data.url;
+    link.append(title);
+    item.append(link);
+
+    const details = [meta.sponsor && `Sponsored by ${meta.sponsor}`, meta.note].filter(Boolean);
+    if (details.length) {
+      const info = document.createElement("span");
+      info.className = "meta";
+      info.textContent = details.join(" · ");
+      item.append(info);
+    }
+    const passage = document.createElement("p");
+    passage.className = "excerpt";
+    passage.append(...excerpt(data));
+    if (passage.textContent?.trim()) item.append(passage);
+    return item;
+  }
+
+  async function showMore(search: number) {
+    const page = await Promise.all(
+      results.slice(shown, shown + PAGE_SIZE).map((result) => result.data()),
+    );
+    if (search !== latest) return;
+    list.append(...page.map(render));
+    shown += page.length;
+    more.hidden = shown >= results.length;
+  }
+
+  async function run(wait = 150) {
+    const search = ++latest;
+    const query = input.value;
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query);
+    if (decade.value) params.set("decade", decade.value);
+    if (sort.value) params.set("sort", sort.value);
+    history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
+
+    if (!query.trim()) {
+      results = [];
+      list.replaceChildren();
+      status.textContent = "";
+      more.hidden = true;
+      return;
+    }
+
+    let found;
+    try {
+      found = await (
+        await loadPagefind()
+      ).debouncedSearch(
+        query,
+        {
+          filters: decade.value ? { decade: decade.value } : {},
+          sort: sort.value ? { date: sort.value } : undefined,
+        },
+        wait,
+      );
+    } catch {
+      status.textContent = import.meta.env.DEV
+        ? "Search needs the search index: run npm run build, then restart npm run dev."
+        : "Search couldn't load. Try reloading the page.";
+      return;
+    }
+    // null: a newer search replaced this one while it waited
+    if (!found || search !== latest) return;
+
+    results = found.results;
+    shown = 0;
+    list.replaceChildren();
+    const count = results.length;
+    const where = decade.value ? ` in the ${decade.value}` : "";
+    status.textContent = count
+      ? `${count.toLocaleString("en-US")} ${count === 1 ? "issue matches" : "issues match"} “${query.trim()}”${where}`
+      : `No issues match “${query.trim()}”${where}`;
+    await showMore(search);
+  }
+
+  input.addEventListener("input", () => run());
+  decade.addEventListener("change", () => run(0));
+  sort.addEventListener("change", () => run(0));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    run(0);
+  });
+  more.addEventListener("click", () => showMore(latest));
+
+  // /search?q=...: search for it right away
+  const params = new URLSearchParams(location.search);
+  input.value = params.get("q") ?? "";
+  decade.value = params.get("decade") ?? "";
+  sort.value = params.get("sort") ?? "";
+  if (input.value.trim()) {
+    run(0);
+  } else {
+    input.focus();
+    // Start loading the index while they type (a failure is reported when they search)
+    loadPagefind().catch(() => undefined);
+  }
+</script>

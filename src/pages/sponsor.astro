@@ -1,0 +1,106 @@
+---
+/**
+ * Sponsors: the old site's sponsor page (it stopped taking donations), and its list of sponsors,
+ * each linked to the months of issues they sponsored (from data/issues.csv).
+ */
+import Layout from "../layouts/Layout.astro";
+import { site } from "../config/site";
+import { getIssues, MONTHS, monthSlug } from "../lib/issues.mjs";
+
+// Everyone the old site listed, in its order (some sponsored issues that aren't digitized yet)
+const SPONSORS = [
+  "John Hertzer",
+  "Haley Williams",
+  "Tony Cerdan",
+  "Dr. Nadesan Permaul",
+  "Jennifer T.B. McNulty",
+  "Leslie Mitchell",
+  "Matthew Brillinger",
+  "Jeremy Gordon",
+  "Harry Shapiro",
+  "Wayne Kao",
+  "Lucinda Abbott",
+  "Ira Jacknis",
+  "Mark Houlemarde",
+  "Jo Freeman",
+  "William Clopton",
+  "Matt Fallentine",
+  "Shekhar Khedekar",
+  "Alexander Feht",
+  "Neville Johnson",
+  "Paul Kandell",
+  "Matthew Avery",
+  "John Sun",
+  "Carl Bertram",
+  "Renee Kovacs",
+  "Chris Dolezalek",
+  "Brad Barber",
+  "William Roberts",
+  "Shirley Conner",
+  "Tom Leimkuhler",
+  "Shreyas Patankar",
+  "Jianye Wen",
+  "Bill Morley",
+];
+
+// Each sponsor's months, from the issues they sponsored: "Nov. 1964"-style links
+const months = new Map<string, Map<string, string>>();
+for (const issue of getIssues()) {
+  if (!issue.sponsor) continue;
+  if (!months.has(issue.sponsor)) months.set(issue.sponsor, new Map());
+  months
+    .get(issue.sponsor)!
+    .set(`${MONTHS[issue.month - 1]} ${issue.year}`, `/${issue.year}/${monthSlug(issue.month)}`);
+}
+// Anyone in the CSV the old list missed goes at the end
+const names = [...SPONSORS, ...[...months.keys()].filter((name) => !SPONSORS.includes(name))];
+---
+
+<Layout
+  title="Sponsors"
+  description="The readers who sponsored the digitization of the Daily Californian's print archive."
+  breadcrumbs={[
+    ["Archive", "/"],
+    ["Sponsors", "/sponsor"],
+  ]}
+>
+  <div class="row">
+    <div class="col-md-8">
+      <h1>Sponsor the archives</h1>
+      <p style="color:#e2565f;">
+        Notice: This project is currently not accepting donations. If you are interested in archival
+        material, the Berkeley Library has digitized most of our issues and can be found{" "}
+        <a href={site.libraryUrl}>here</a>. If you are interested in supporting The Daily
+        Californian's general operations, click <a href={site.donateUrl}>here</a>.
+      </p>
+      <p>
+        Other newspapers have paid hundreds of thousands of dollars to contractors to digitize and
+        host their archives. As an independent newspaper, we're trying to archive our newspaper at a
+        fraction of that cost. Readers sponsored the digitization of a month or a year at a time,
+        and their names appear alongside the issues they supported. Thank you.
+      </p>
+      <h2>Sponsors</h2>
+      <ul>
+        {names.map((name) => {
+          const sponsored = months.get(name);
+          return (
+            <li>
+              {name}
+              {sponsored && (
+                <span class="small">
+                  {" — "}
+                  {[...sponsored].map(([label, href], i) => (
+                    <>
+                      {i > 0 && ", "}
+                      <a href={href}>{label}</a>
+                    </>
+                  ))}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </div>
+</Layout>

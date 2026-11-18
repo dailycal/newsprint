@@ -1,0 +1,9 @@
+dist
+.astro
+node_modules
+package-lock.json
+public
+data
+
+# Vendored as the old site served it
+src/styles/bootstrap.min.css

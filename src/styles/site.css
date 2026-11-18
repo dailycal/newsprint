@@ -1,0 +1,457 @@
+/*
+ * The old archive site's styles (newsprint.dailycal.org's static/browser/css/style.css and the
+ * styles its pages had inline), on top of Bootstrap 3. Additions for this site are at the end.
+ */
+
+/* ---- Old style.css ---- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  margin-bottom: 120px;
+  font-family: "Lato", sans-serif;
+}
+h2 {
+  font-weight: 300;
+  font-size: 26px;
+}
+h3 {
+  font-weight: 400;
+}
+a {
+  color: #107dc7;
+  font-weight: 600;
+}
+a:hover {
+  color: #000;
+}
+p {
+  font-weight: 300;
+  font-size: 20px;
+}
+.center {
+  text-align: center !important;
+}
+.navbar-dc {
+  background-color: #000;
+  margin-bottom: 0;
+  border-radius: 0;
+  border: none;
+}
+.navbar-dc .navbar-brand {
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  color: #fff;
+  font-weight: 400;
+}
+.navbar-dc .navbar-nav li a {
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+.navbar-dc .navbar-nav li a:hover,
+.navbar-dc .navbar-nav li a:focus {
+  color: #fff;
+  text-decoration: underline;
+  background-color: #107dc7;
+}
+.navbar-dc .icon-bar {
+  background-color: #fff;
+}
+.navbar-dc .navbar-toggle {
+  border-color: #333;
+}
+.navbar-dc .navbar-collapse {
+  border-color: #333;
+}
+.breadcrumb {
+  margin-top: 20px;
+  background: none;
+  padding: 8px 0px;
+}
+.footer {
+  width: 100%;
+  background-color: #000;
+  margin-top: 20px;
+  position: absolute;
+  bottom: 0;
+}
+.footer p {
+  margin: 30px auto;
+  color: #fff;
+  font-weight: 200;
+  font-size: 14px;
+}
+.footer a {
+  color: #fff;
+  font-weight: 600;
+}
+.small {
+  font-size: 12px;
+  color: grey;
+}
+@media (max-width: 768px) {
+  body {
+    margin-bottom: 150px;
+  }
+}
+@media (max-width: 480px) {
+  body {
+    margin-bottom: 180px;
+  }
+  .footer p {
+    font-size: 12px;
+  }
+}
+
+/* ---- Old homepage ---- */
+.top {
+  background-size: cover;
+  background-position: center;
+  padding: 30px 0 30px 0;
+  color: #fff;
+}
+.heading {
+  text-align: center;
+}
+.top h1 {
+  text-transform: uppercase;
+  font-family: Georgia, serif;
+  font-size: 90px;
+  letter-spacing: 30px;
+}
+.top h2 {
+  font-size: 40px;
+  font-weight: 300;
+}
+a.btn {
+  font-size: 24px;
+}
+.buttons {
+  margin: 50px 0 70px 0;
+  text-align: center;
+}
+.btn-dc {
+  border-radius: 0;
+  border: none;
+  background-color: #107dc7;
+  color: #fff;
+  font-weight: 300;
+  text-transform: uppercase;
+}
+.btn-dc:hover,
+.btn-dc:focus {
+  background-color: black;
+  color: #fff;
+}
+.row-info {
+  padding: 80px 0 80px 0;
+}
+@media (max-width: 768px) {
+  .top {
+    padding: 30px 0 30px 0;
+  }
+  .top h1 {
+    font-size: 30px;
+    letter-spacing: 18px;
+  }
+  .top h2 {
+    font-size: 24px;
+  }
+  .buttons .btn {
+    margin-bottom: 15px;
+  }
+}
+
+/* ---- Old /issues/ grid ---- */
+.table > tbody > tr > td.month-cell {
+  width: 7.5%;
+  text-align: center;
+  padding: 0;
+  color: lightgrey;
+  vertical-align: middle;
+  font-weight: 300;
+}
+.table > tbody > tr > td.month-cell.available,
+span.available {
+  font-weight: 600;
+  color: #fff;
+  background-color: #107dc7;
+}
+.table > tbody > tr > td.month-cell.available a {
+  color: #fff;
+  display: block;
+}
+.table > tbody > tr > td.month-cell.available a:hover,
+.table > tbody > tr > td.month-cell.available a:focus {
+  background-color: #000;
+  text-decoration: none;
+}
+.table > tbody > tr > td,
+.table > tbody > tr > th {
+  padding: 2px;
+}
+
+/* ---- Additions ---- */
+
+/* Search box: the hero's, and the /search page's */
+.search-form {
+  display: flex;
+  max-width: 640px;
+  margin: 30px auto 0;
+}
+.search-form input {
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid #ccc;
+  border-right: none;
+  border-radius: 0;
+  font-size: 20px;
+  font-weight: 300;
+  color: #000;
+}
+.search-form button {
+  height: 50px;
+  padding: 0 24px;
+  font-size: 20px;
+}
+/* "Archive", in the brand link, styled like the old site's separate Archive nav link */
+.navbar-dc .navbar-brand .brand-archive {
+  margin-left: 12px;
+  font-family: "Lato", sans-serif;
+  font-variant: normal;
+  font-weight: 300;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+/* The same hover as the other nav links */
+.navbar-dc .navbar-brand:hover,
+.navbar-dc .navbar-brand:focus {
+  color: #fff;
+  background-color: #107dc7;
+  text-decoration: none;
+}
+.navbar-dc .nav-search svg {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  fill: currentColor;
+}
+
+/* The note under the homepage's hero, pointing to the current e-edition */
+.archive-banner {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: center;
+}
+.archive-banner p {
+  margin: 0;
+  padding: 14px 0;
+  font-size: 17px;
+}
+
+/* The grid's year labels */
+.issue-grid td.year-cell {
+  font-weight: 600;
+  padding-right: 10px;
+  width: 10%;
+}
+.issue-grid td.year-cell.empty {
+  color: lightgrey;
+  font-weight: 300;
+}
+
+/* A month's calendar, styled like the old site's inline date picker */
+.calendar {
+  display: inline-block;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.calendar table {
+  width: 100%;
+  min-width: 260px;
+  /* Space between days, like the old date picker's */
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+.calendar caption {
+  color: #000;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 0 0 8px;
+}
+.calendar caption a {
+  color: #000;
+}
+.calendar th,
+.calendar td {
+  text-align: center;
+  width: 36px;
+  height: 34px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.calendar th {
+  font-weight: 600;
+}
+.calendar td {
+  color: #ccc;
+  font-weight: 300;
+}
+.calendar td a {
+  display: block;
+  line-height: 34px;
+  border-radius: 4px;
+  color: #000;
+  font-weight: 600;
+}
+.calendar td a:hover,
+.calendar td a:focus {
+  background-color: #eee;
+  text-decoration: none;
+}
+.calendar td.issue a {
+  background-color: #107dc7;
+  color: #fff;
+}
+.calendar td.issue a:hover,
+.calendar td.issue a:focus {
+  background-color: #000;
+}
+.calendar td.note a {
+  box-shadow: inset 0 -3px 0 #e2a03f;
+}
+
+/* An issue's page */
+.issue-header {
+  margin-bottom: 20px;
+}
+.issue-header .kicker {
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  font-size: 20px;
+  margin: 0;
+  color: #555;
+}
+.issue-header h1 {
+  margin-top: 4px;
+}
+.issue-nav {
+  font-size: 16px;
+}
+.issue-nav p {
+  font-size: 16px;
+}
+.issue-sponsor {
+  font-style: italic;
+}
+.issue-viewer {
+  position: relative;
+  width: 100%;
+  height: 85vh;
+  min-height: 500px;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+}
+.issue-viewer iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.issue-links {
+  margin: 12px 0 30px;
+}
+.issue-links a {
+  margin-right: 20px;
+  font-size: 16px;
+}
+/* Bootstrap's normalize makes summary display: block, which hides the browser's own triangle */
+.issue-text summary {
+  display: inline-block;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 8px 0;
+  list-style: none;
+}
+.issue-text summary::-webkit-details-marker {
+  display: none;
+}
+.issue-text summary::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 8px;
+  vertical-align: 2px;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform 0.15s;
+}
+.issue-text[open] summary::before {
+  transform: rotate(90deg);
+}
+.issue-text summary:hover {
+  color: #107dc7;
+}
+.issue-text .ocr {
+  white-space: pre-line;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #222;
+  column-width: 22em;
+  column-gap: 2em;
+}
+.alert-note p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Search results */
+.search .status {
+  margin-top: 20px;
+  font-size: 16px;
+}
+.search .results {
+  list-style: none;
+  padding: 0;
+}
+.search .results li {
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+.search .result .title {
+  display: block;
+  font-size: 22px;
+}
+.search .result .meta {
+  display: block;
+  font-size: 14px;
+  color: grey;
+  font-weight: 300;
+}
+.search .excerpt {
+  font-size: 16px;
+  margin: 6px 0 0;
+  color: #222;
+}
+.search mark {
+  background: #fde68a;
+  padding: 0 1px;
+}
+.search-filters {
+  margin-top: 12px;
+  font-size: 16px;
+}
+.search-filters select {
+  margin-left: 6px;
+}

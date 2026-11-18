@@ -1,0 +1,158 @@
+---
+/**
+ * The homepage: the old archive's "Newsprint" banner (with search and a random issue), then the old
+ * /issues/ page's grid of every month since 1871, with digitized months linking to their calendar.
+ * All built from data/issues.csv.
+ */
+import { getImage } from "astro:assets";
+import hero from "../assets/hero.jpg";
+import Layout from "../layouts/Layout.astro";
+import { site } from "../config/site";
+import { getIssues, issuesByMonth, MONTHS, monthSlug } from "../lib/issues.mjs";
+
+const issues = getIssues();
+const byMonth = issuesByMonth();
+const lastYear = Math.max(new Date().getFullYear(), issues.at(-1)!.year);
+const years = Array.from({ length: lastYear - site.firstYear + 1 }, (_, i) => site.firstYear + i);
+const monthCount = [...byMonth.values()].reduce((sum, months) => sum + months.size, 0);
+
+const background = await getImage({ src: hero, width: 1400, format: "webp", quality: 70 });
+const paths = issues.map((issue) => issue.path);
+---
+
+<Layout breadcrumbs={[["Archive", "/"]]}>
+  <div
+    slot="top"
+    class="top"
+    style={`background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("${background.src}")`}
+  >
+    <div class="container top-container">
+      <div class="row heading">
+        <h1>Newsprint</h1>
+        <h2>The Daily Californian Print Archive</h2>
+        <form class="search-form" action="/search" role="search">
+          <input
+            type="search"
+            name="q"
+            aria-label="Search every issue"
+            placeholder={`Search ${issues.length.toLocaleString("en-US")} issues`}
+            autocomplete="off"
+          />
+          <button type="submit" class="btn btn-dc">
+            Search
+          </button>
+        </form>
+      </div>
+      <div class="row buttons">
+        <div class="col-sm-3 col-sm-offset-3">
+          <a href="#issues" class="btn btn-dc btn-lg">
+            Issues by year
+          </a>
+        </div>
+        <div class="col-sm-3">
+          <a href={paths[0]} id="random-link" class="btn btn-dc btn-lg">
+            Random issue
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div slot="top" class="archive-banner">
+    <div class="container">
+      <p>
+        This is a historical archive of The Daily Californian's newsprint. For our most recent print
+        editions, see <a href="https://dailycalifornian-ca.newsmemory.com/">here</a>.
+      </p>
+    </div>
+  </div>
+
+  <div class="row row-info">
+    <div class="col-md-4">
+      <h3>Search every page</h3>
+      <p>
+        Every page of the {issues.length.toLocaleString("en-US")} issues here has been transcribed,
+        so you can search them all for a name, a place or an event.
+      </p>
+      <p>
+        <a href="/search">Search the archive &raquo;</a>
+      </p>
+    </div>
+    <div class="col-md-4">
+      <h3>Our sponsors</h3>
+      <p>
+        Readers sponsored the digitization of many of these issues, one microfilm reel at a time.
+        Their names appear alongside the issues they supported.
+      </p>
+      <p>
+        <a href="/sponsor">See our sponsors &raquo;</a>
+      </p>
+    </div>
+    <div class="col-md-4">
+      <h3>About this project</h3>
+      <p>
+        Staff scanned these issues from microfilm in UC Berkeley's Bancroft Library, starting with
+        1964, the year of the Free Speech Movement.
+      </p>
+      <p>
+        <a href="/about">Read about the archive &raquo;</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="row" id="issues">
+    <div class="col-md-10">
+      <h2>All issues</h2>
+      <p>
+        The Daily Californian has been continually published since {site.firstYear}. Months that are
+        <span style="padding: 2px 6px" class="available">
+          highlighted
+        </span>{" "}
+        have been digitized: {monthCount} months, {issues.length.toLocaleString("en-US")} issues.
+        Pick one to see its calendar.
+      </p>
+      <br />
+      <table class="table issue-grid">
+        <caption class="sr-only">Digitized months, by year</caption>
+        <tbody>
+          {years.map((year) => {
+            const months = byMonth.get(year);
+            return (
+              <tr>
+                <td id={String(year)} class:list={["year-cell", { empty: !months }]}>
+                  {months ? <a href={`/${year}`}>{year}</a> : year}
+                </td>
+                {MONTHS.map((name, i) => {
+                  const count = months?.get(i + 1)?.length;
+                  return count ? (
+                    <td class="month-cell available">
+                      <a
+                        href={`/${year}/${monthSlug(i + 1)}`}
+                        title={`${name} ${year}: ${count} ${count === 1 ? "issue" : "issues"}`}
+                      >
+                        {name.slice(0, 3).toUpperCase()}
+                      </a>
+                    </td>
+                  ) : (
+                    <td class="month-cell">{name.slice(0, 3).toUpperCase()}</td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="application/json" id="issue-paths" set:html={JSON.stringify(paths)} />
+</Layout>
+
+<script>
+  // "Random issue" goes to a different issue each time (its href, the first issue, is the fallback
+  // without JavaScript)
+  const paths: string[] = JSON.parse(document.getElementById("issue-paths")!.textContent!);
+  document.getElementById("random-link")!.addEventListener("click", (event) => {
+    event.preventDefault();
+    location.assign(paths[Math.floor(Math.random() * paths.length)]!);
+  });
+</script>

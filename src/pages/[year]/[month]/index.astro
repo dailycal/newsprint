@@ -1,0 +1,75 @@
+---
+/**
+ * A month: /1964/november. Like the old site's month page: breadcrumbs, the previous and next
+ * digitized months, and a calendar of the month's issues.
+ */
+import type { GetStaticPaths } from "astro";
+import Calendar from "../../../components/Calendar.astro";
+import Layout from "../../../layouts/Layout.astro";
+import { issuesByMonth, MONTHS, monthSlug, type Issue } from "../../../lib/issues.mjs";
+
+export const getStaticPaths = (() => {
+  const all = [...issuesByMonth()].flatMap(([year, months]) =>
+    [...months].map(([month, issues]) => ({ year, month, issues })),
+  );
+  return all.map(({ year, month, issues }, i) => ({
+    params: { year: String(year), month: monthSlug(month) },
+    props: { year, month, issues, previous: all[i - 1], next: all[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface MonthRef {
+  year: number;
+  month: number;
+}
+interface Props extends MonthRef {
+  issues: Issue[];
+  previous?: MonthRef;
+  next?: MonthRef;
+}
+
+const { year, month, issues, previous, next } = Astro.props;
+const name = MONTHS[month - 1];
+const href = (ref: MonthRef) => `/${ref.year}/${monthSlug(ref.month)}`;
+const label = (ref: MonthRef) => `${MONTHS[ref.month - 1]} ${ref.year}`;
+const noted = issues.filter((issue) => issue.note);
+---
+
+<Layout
+  title={`Issues from ${name} ${year}`}
+  description={`${issues.length} digitized ${issues.length === 1 ? "issue" : "issues"} of the Daily Californian from ${name} ${year}, with the full text of every page.`}
+  breadcrumbs={[
+    ["Archive", "/"],
+    [String(year), `/${year}`],
+    [name, `/${year}/${monthSlug(month)}`],
+  ]}
+>
+  <div class="row">
+    <div class="col-md-8">
+      <ol class="breadcrumb">
+        <li>
+          <a href="/#issues">Issues</a>
+        </li>
+        <li>
+          <a href={`/${year}`}>{year}</a>
+        </li>
+        <li class="active">{name}</li>
+      </ol>
+      <h1>
+        Issues published in {name} {year}
+      </h1>
+      <p>
+        {previous && <a href={href(previous)}>&laquo; {label(previous)}</a>}
+        {previous && next && " · "}
+        {next && <a href={href(next)}>{label(next)} &raquo;</a>}
+      </p>
+      <br />
+      <Calendar year={year} month={month} issues={issues} />
+      {noted.length > 0 && (
+        <p class="small">
+          Days underlined in orange have a note about the scan, such as missing pages.
+        </p>
+      )}
+    </div>
+  </div>
+</Layout>

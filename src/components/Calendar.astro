@@ -1,0 +1,68 @@
+---
+/**
+ * One month as a calendar, like the old site's inline date picker: days with an issue link to it,
+ * the rest are greyed out. Built at build time, so it works without JavaScript and every issue is a
+ * plain link search engines can follow.
+ */
+import { MONTHS, monthSlug, type Issue } from "../lib/issues.mjs";
+
+export interface Props {
+  year: number;
+  /** 1-12 */
+  month: number;
+  issues: Issue[];
+  /** Link the month's name to its page (on the year page). */
+  linkTitle?: boolean;
+  /** The heading level of the month's name, for the page's outline. */
+  headingLevel?: 2 | 3;
+}
+
+const { year, month, issues, linkTitle = false } = Astro.props;
+const byDay = new Map(issues.map((issue) => [issue.day, issue]));
+
+const first = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+const cells: (number | null)[] = [
+  ...Array.from({ length: first }, () => null),
+  ...Array.from({ length: days }, (_, i) => i + 1),
+];
+while (cells.length % 7) cells.push(null);
+const weeks = Array.from({ length: cells.length / 7 }, (_, i) => cells.slice(i * 7, i * 7 + 7));
+const name = `${MONTHS[month - 1]} ${year}`;
+---
+
+<div class="calendar">
+  <table>
+    <caption>{linkTitle ? <a href={`/${year}/${monthSlug(month)}`}>{name}</a> : name}</caption>
+    <thead>
+      <tr>
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day, i) => (
+          <th
+            scope="col"
+            abbr={["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i]}
+          >
+            {day}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {weeks.map((week) => (
+        <tr>
+          {week.map((day) => {
+            const issue = day ? byDay.get(day) : undefined;
+            return issue ? (
+              <td class:list={["issue", { note: issue.note }]}>
+                <a href={issue.path} aria-label={issue.label} title={issue.note || undefined}>
+                  {day}
+                </a>
+              </td>
+            ) : (
+              <td>{day ?? ""}</td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

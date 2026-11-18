@@ -1,0 +1,135 @@
+---
+/**
+ * An issue: /1964/november/12. Its date, sponsor and any note about the scan, the PDF in Google
+ * Drive's viewer, and the full OCR text of every page (in a collapsed section, so it's on the page
+ * for search engines and readers who want it, without a wall of text above the fold).
+ */
+import type { GetStaticPaths } from "astro";
+import Layout from "../../../layouts/Layout.astro";
+import {
+  driveDownloadURL,
+  drivePreviewURL,
+  getIssues,
+  MONTHS,
+  monthSlug,
+  type Issue,
+} from "../../../lib/issues.mjs";
+import { ocrText } from "../../../lib/ocr.mjs";
+
+export const getStaticPaths = (() => {
+  const issues = getIssues();
+  return issues.map((issue, i) => ({
+    params: { year: String(issue.year), month: monthSlug(issue.month), day: String(issue.day) },
+    props: { issue, previous: issues[i - 1], next: issues[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  issue: Issue;
+  previous?: Issue;
+  next?: Issue;
+}
+
+const { issue, previous, next } = Astro.props;
+const { year, month } = issue;
+const monthName = MONTHS[month - 1];
+const monthPath = `/${year}/${monthSlug(month)}`;
+
+// The text, tidied: OCR lines that are only punctuation or a stray letter are scanning noise
+const text = ocrText(issue.key)
+  .split("\n")
+  .filter((line) => !/^\W?\w?\W*$/.test(line.trim()) || line.trim() === "")
+  .join("\n")
+  .replace(/\n{3,}/g, "\n\n")
+  .trim();
+
+// Kept under ~160 characters, so search results show all of it
+const description = `The Daily Californian's print edition from ${issue.label}, scanned from microfilm, with its full text.${
+  issue.sponsor ? ` Sponsored by ${issue.sponsor}.` : ""
+}`;
+---
+
+<Layout
+  title={`${issue.label}`}
+  description={description}
+  issue={issue}
+  breadcrumbs={[
+    ["Archive", "/"],
+    [String(year), `/${year}`],
+    [monthName, monthPath],
+    [String(issue.day), issue.path],
+  ]}
+>
+  <article>
+    <ol class="breadcrumb">
+      <li>
+        <a href="/#issues">Issues</a>
+      </li>
+      <li>
+        <a href={`/${year}`}>{year}</a>
+      </li>
+      <li>
+        <a href={monthPath}>{monthName}</a>
+      </li>
+      <li class="active">{issue.day}</li>
+    </ol>
+
+    <header class="issue-header">
+      <p class="kicker">The Daily Californian</p>
+      <h1>
+        <time datetime={issue.iso}>{issue.label}</time>
+      </h1>
+      <div class="issue-nav">
+        <p>
+          {previous && (
+            <a href={previous.path} rel="prev">
+              &laquo; {previous.shortLabel}
+            </a>
+          )}
+          {previous && next && " · "}
+          {next && (
+            <a href={next.path} rel="next">
+              {next.shortLabel} &raquo;
+            </a>
+          )}
+        </p>
+      </div>
+      {issue.sponsor && <p class="issue-sponsor">Sponsored by {issue.sponsor}</p>}
+    </header>
+
+    {issue.note && (
+      <div class="alert alert-warning alert-note" role="note">
+        <p>
+          <strong>Note:</strong> {issue.note}.
+        </p>
+      </div>
+    )}
+
+    <div class="issue-viewer">
+      <iframe
+        src={drivePreviewURL(issue)}
+        title={`The Daily Californian, ${issue.label} (PDF)`}
+        allow="autoplay"
+        allowfullscreen
+      ></iframe>
+    </div>
+    <p class="issue-links">
+      <a href={driveDownloadURL(issue)} rel="noopener">
+        Download the PDF
+      </a>
+    </p>
+
+    {text && (
+      <details class="issue-text">
+        <summary>Text of this issue</summary>
+        <p class="small">
+          Transcribed automatically from the scanned pages, so it may contain errors, and columns
+          may run together. The PDF above is the original.
+        </p>
+        <div class="ocr" lang="en">
+          {text}
+        </div>
+      </details>
+    )}
+  </article>
+</Layout>

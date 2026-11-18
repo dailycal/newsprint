@@ -1,0 +1,69 @@
+---
+/** About the archive: the old site's text, with a note on the full-text search. */
+import Layout from "../layouts/Layout.astro";
+import { site } from "../config/site";
+import { getIssues } from "../lib/issues.mjs";
+
+const issues = getIssues();
+const first = issues[0]!;
+const last = issues.at(-1)!;
+---
+
+<Layout
+  title="About"
+  description="How and why The Daily Californian is digitizing its print archive from microfilm."
+  breadcrumbs={[
+    ["Archive", "/"],
+    ["About", "/about"],
+  ]}
+>
+  <div class="row">
+    <div class="col-md-8">
+      <h1>About the archives</h1>
+      <p>
+        The Daily Californian has been published continually since 1871, providing a rich historical
+        record not only of campus life, but also of the world seen through the eyes of the
+        undergraduates at one of the nation's foremost public universities. Our archives document
+        the history of the Free Speech Movement, anti-war rallies such as the People's Park protest
+        of 1971, and still-memorable Big Games against Stanford University. Taken together, they
+        encompass a major piece of California and East Bay history.
+      </p>
+      <p>
+        But most of these issues aren't easily accessible to the public. They're stored on microfilm
+        reels in the Bancroft Library's University Archives. Additionally, the only microfilm
+        readers available to us are also located at the University Archives, which necessitates that
+        we do all of our archiving work on site. Moreover, the reels are neither searchable nor
+        tagged.
+      </p>
+      <p>
+        Our goal is to digitize and sort every Daily Californian microfilm reel in the library.
+        While private companies often scan microfilm in bulk, this process can cost hundreds of
+        thousands of dollars — money that would be better spent improving our current newspaper
+        coverage. In lieu, we have staff members who are willing to dedicate their time to the
+        manual process of scanning the original microfilm.
+      </p>
+      <p>
+        We started with reels from 1964, the year of the Free Speech Movement, because the Daily
+        Californian archives offer fascinating insight into that tumultuous year. This archive now
+        holds {issues.length.toLocaleString("en-US")} issues, from {first.shortLabel} to{" "}
+        {last.shortLabel}.
+      </p>
+      <h2>Searching the archive</h2>
+      <p>
+        Every page has been transcribed with optical character recognition, so you can{" "}
+        <a href="/search">search the text</a> of every issue. The transcriptions are automatic and
+        contain errors, especially in the oldest issues, so the scans themselves are always the
+        authoritative record.
+      </p>
+      <p>
+        UC Berkeley Library has also digitized much of the Daily Californian's history, which you
+        can browse in <a href={site.libraryUrl}>its digital collections</a>.
+      </p>
+      <p>
+        Questions, comments or corrections? Email{" "}
+        <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>. This project is open-source
+        on <a href={site.githubUrl}>GitHub</a>.
+      </p>
+    </div>
+  </div>
+</Layout>
