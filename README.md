@@ -17,11 +17,11 @@ Source for [archive.dailycal.org](https://archive.dailycal.org/): The Daily Cali
 | `npm run pack-ocr [-- <folder>]` | Pack the OCR text into `data/ocr.tar.gz` (see [Data](#data)) |
 | `npm run deploy` | Build and deploy the site to Cloudflare |
 
-Always run `npm run build` and `npm run lint` before pushing. GitHub Actions also runs both on every commit and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+Always run `npm run build` and `npm run lint` before pushing.
 
 **Deploying:** the site is entirely static. It's hosted on Cloudflare as a Worker named `newsprint` that only serves static assets (configured in [`wrangler.jsonc`](wrangler.jsonc)). `npm run deploy` builds the site and uploads `dist/` with `wrangler deploy` (run `npx wrangler login` first). The build fails if `dist/` wouldn't deploy: a file over Cloudflare's 25 MiB limit, more than 20,000 files, or a build input (the CSV or OCR text) that ended up in it ([`src/lib/check-dist.mjs`](src/lib/check-dist.mjs)).
 
-**Previews:** every pull request from a branch in this repository gets its own copy of the site at `https://pr<number>.archive.dailycal.org`, deleted when the pull request is closed ([`.github/workflows/preview.yml`](.github/workflows/preview.yml)). [`wrangler.jsonc`](wrangler.jsonc) sets the custom domain `archive.dailycal.org` for both production and previews, and turns off `*.workers.dev` addresses for both, so the site is only ever served on dailycal.org. The workflow needs the repository secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
+**Domain:** [`wrangler.jsonc`](wrangler.jsonc) attaches the custom domain `archive.dailycal.org` to the Worker on deploy. `*.workers.dev` addresses and preview URLs are turned off, so the site is only ever served at archive.dailycal.org.
 
 ## Data
 
