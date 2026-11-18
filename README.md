@@ -1,6 +1,6 @@
 # Newsprint
 
-Source for [archive.dailycal.org](https://archive.dailycal.org/): The Daily Californian's print archive. Every digitized issue has its own page, with the scan (a PDF in Google Drive) and the full text of every page, and the whole archive is searchable.
+Source for [archives.dailycal.org](https://archives.dailycal.org/): The Daily Californian's print archive. Every digitized issue has its own page, with the scan (a PDF in Google Drive) and the full text of every page, and the whole archive is searchable.
 
 ## Install, build, deploy
 
@@ -21,7 +21,7 @@ Always run `npm run build` and `npm run lint` before pushing.
 
 **Deploying:** the site is entirely static. It's hosted on Cloudflare as a Worker named `newsprint` that only serves static assets (configured in [`wrangler.jsonc`](wrangler.jsonc)). `npm run deploy` builds the site and uploads `dist/` with `wrangler deploy` (run `npx wrangler login` first). The build fails if `dist/` wouldn't deploy: a file over Cloudflare's 25 MiB limit, more than 20,000 files, or a build input (the CSV or OCR text) that ended up in it ([`src/lib/check-dist.mjs`](src/lib/check-dist.mjs)).
 
-**Domain:** [`wrangler.jsonc`](wrangler.jsonc) attaches the custom domain `archive.dailycal.org` to the Worker on deploy. `*.workers.dev` addresses and preview URLs are turned off, so the site is only ever served at archive.dailycal.org.
+**Domain:** [`wrangler.jsonc`](wrangler.jsonc) attaches the custom domain `archives.dailycal.org` to the Worker on deploy. `*.workers.dev` addresses and preview URLs are turned off, so the site is only ever served at archives.dailycal.org.
 
 ## Data
 
@@ -43,8 +43,6 @@ The PDFs have to be viewable by anyone with the link for the embeds to work.
 | `/search?q=...` | Full-text search, with a decade filter and date sorting |
 | `/about`, `/sponsor` | The old site's pages; sponsors link to the months they sponsored |
 
-The old archive's URLs (`/issues/1964/11/12/`, `/issues/1964/11/`) redirect here with 301s, generated into `dist/_redirects` at build time ([`src/lib/legacy-redirects.mjs`](src/lib/legacy-redirects.mjs)).
-
 **SEO:** each page has a canonical link, a description, Open Graph and X card tags, and JSON-LD structured data (each issue is a `PublicationIssue` of the Daily Californian, with breadcrumbs). `robots.txt` and the sitemap (`/sitemap-index.xml`) are generated at build time.
 
 **Search** is [Pagefind](https://pagefind.app/), which runs in the browser. At the end of the build, [`src/lib/search-index.mjs`](src/lib/search-index.mjs) indexes each issue's date, sponsor and full text straight from `data/`, into `dist/pagefind/`.
@@ -58,7 +56,7 @@ src/
   pages/              The pages above; [year]/[month]/[day].astro is an issue
   layouts/Layout.astro  The old site's navbar and footer
   components/         Head.astro (SEO tags), Calendar.astro (a month's calendar)
-  lib/                Reading the data, and the build steps: search index, redirects, checks
+  lib/                Reading the data, and the build steps: search index, checks
   styles/             Bootstrap 3 (as the old site served it) and the old site's styles
   config/site.ts      Site-wide names and links
 ```

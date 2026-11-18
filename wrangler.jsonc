@@ -7,10 +7,10 @@
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
   },
-  // Only serve the site at archive.dailycal.org: never at a *.workers.dev address, and no preview
+  // Only serve the site at archives.dailycal.org: never at a *.workers.dev address, and no preview
   // URLs for versions or previews
   "routes": [
-    { "pattern": "archive.dailycal.org", "custom_domain": true, "previews_enabled": false },
+    { "pattern": "archives.dailycal.org", "custom_domain": true, "previews_enabled": false },
   ],
   "workers_dev": false,
   "preview_urls": false,

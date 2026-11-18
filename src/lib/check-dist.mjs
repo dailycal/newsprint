@@ -2,7 +2,7 @@
  * Checks the built site against Cloudflare's limits at the end of `astro build`, so the build fails
  * instead of the deploy: 25 MiB per static asset, and 20,000 files per Worker on the free plan.
  * It also checks that data/ didn't end up in dist/ (the CSV and OCR text are build inputs only).
- * Runs last, after the search index and redirects are written.
+ * Runs last, after the search index is written.
  */
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
